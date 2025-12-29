@@ -1,6 +1,28 @@
 import sys
 from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QVBoxLayout
+# from PyQt6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QVBoxLayout
+from PyQt6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDateEdit,
+    QDateTimeEdit,
+    QDial,
+    QDoubleSpinBox,
+    QFontComboBox,
+    QLabel,
+    QLCDNumber,
+    QLineEdit,
+    QMainWindow,
+    QProgressBar,
+    QPushButton,
+    QRadioButton,
+    QSlider,
+    QSpinBox,
+    QTimeEdit,
+    QVBoxLayout,
+    QWidget,
+)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -20,11 +42,32 @@ class MainWindow(QMainWindow):
         self.button.clicked.connect(self.button_clicked)
         # self.button.clicked.connect(self.button_togled)
         self.button.setChecked(self.button_is_checked)
-        self.setFixedSize(QSize(400, 300))
+        # self.setFixedSize(QSize(400, 300))
         # button.setFixedSize(QSize(100, 50))
         layout.addWidget(self.input)
         layout.addWidget(self.label)
         layout.addWidget(self.button)
+        widgets = [
+            QCheckBox,
+            QComboBox,
+            QDateEdit,
+            QDateTimeEdit,
+            QDial,
+            QDoubleSpinBox,
+            QFontComboBox,
+            QLCDNumber,
+            QLabel,
+            QLineEdit,
+            QProgressBar,
+            QPushButton,
+            QRadioButton,
+            QSlider,
+            QSpinBox,
+            QTimeEdit,
+        ]
+
+        for w in widgets:
+            layout.addWidget(w())
 
         container = QWidget()
         container.setLayout(layout)

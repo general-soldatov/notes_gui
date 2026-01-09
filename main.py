@@ -8,6 +8,10 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QPixmap
 from PIL import Image, ImageOps
+from base import JsonDB, Model
+
+PATH = "database.json"
+db = JsonDB(PATH)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -38,6 +42,15 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def save_notes(self):
+        img = Image.open(self.tmp_path)
+        path = 'note_images/' + os.path.basename(self.img_path)
+        img.save(path)
+        model = Model(
+            text=self.input.text(),
+            image=path
+        )
+        db.add(model)
+        db.commit()
         QMessageBox.information(self, "Information", "Your file has been saved.")
 
     def add_image(self):

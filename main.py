@@ -1,32 +1,40 @@
 import sys
 import os
 from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QGridLayout, QFileDialog, QMessageBox
+from PyQt6.QtWidgets import (
+    QWidget, QApplication, QMainWindow, QPushButton,
+    QLabel, QLineEdit, QGridLayout, QFileDialog, QMessageBox,
+    QComboBox, QSpinBox
+)
 from PyQt6.QtGui import QPixmap
+from PIL import Image, ImageOps
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
+        self.img_hight = 300
+        self.filters = ['null', 'grayscale', 'cutting']
 
         self.setWindowTitle("Notes Editor")
-        # self.setFixedSize(QSize(800, 500))
-        layout = QGridLayout()
+        self.setFixedSize(QSize(400, 500))
+        self.layout_grid = QGridLayout()
 
         self.label = QLabel("Text of Notes:")
         self.input = QLineEdit()
         self.btn_image = QPushButton("Import Image")
         self.btn_save = QPushButton("Save Notes")
         self.widget = QLabel("Image")
+        self.img_filters = QComboBox()
         self.btn_image.clicked.connect(self.add_image)
         self.btn_save.clicked.connect(self.save_notes)
-        layout.addWidget(self.label, 0, 0)
-        layout.addWidget(self.input, 0, 1, 1, 2)
-        layout.addWidget(self.btn_image, 1, 0)
-        layout.addWidget(self.btn_save, 1, 1)
-        layout.addWidget(self.widget, 2, 0, 2, 3)
+        self.layout_grid.addWidget(self.label, 0, 0)
+        self.layout_grid.addWidget(self.input, 0, 1, 1, 3)
+        self.layout_grid.addWidget(self.btn_image, 1, 0)
+        self.layout_grid.addWidget(self.btn_save, 1, 1)
+        self.layout_grid.addWidget(self.widget, 2, 0, 2, 4)
 
         container = QWidget()
-        container.setLayout(layout)
+        container.setLayout(self.layout_grid)
         self.setCentralWidget(container)
 
     def save_notes(self):
@@ -37,13 +45,64 @@ class MainWindow(QMainWindow):
                                                 os.path.expanduser("~"),
                                                 "Images (*.png *.jpg)")[0]
         if self.img_path:
-            pixmap = QPixmap(self.img_path)
-            pixmap = pixmap.scaledToWidth(400)
-            self.widget.setPixmap(pixmap)
-            QMessageBox.information(self, "Image", "Your image has been loaded.")
+            self.filter_to_image()
+            self.layout_grid.addWidget(QLabel("Filter: "), 4, 0)
+            self.img_filters.addItems(self.filters)
+            self.img_filters.currentTextChanged.connect(self.filter_to_image)
+            self.layout_grid.addWidget(self.img_filters, 4, 1, 1, 2)
+            self.btn_reset = QPushButton("Reset Image")
+            self.btn_reset.clicked.connect(self.reset_image)
+            self.layout_grid.addWidget(self.btn_reset, 1, 2)
+            # QMessageBox.information(self, "Image", "Your image has been loaded.")
         else:
             self.widget.setText("Not Image")
 
+    def filter_to_image(self, filter=None):
+        image = Image.open(self.img_path)
+        img_path = 'temp/' + os.path.basename(self.img_path)
+        image = self.image_filter(image, filter)
+        image.save(img_path)
+        pixmap = QPixmap(img_path)
+        pixmap = pixmap.scaledToHeight(self.img_hight)
+        self.widget.setPixmap(pixmap)
+
+    def reset_image(self):
+        self.filter_to_image()
+        self.img_filters.setCurrentIndex(0)
+
+    def image_filter(self, image: Image.Image, filter):
+        match filter:
+            case 'grayscale':
+                return ImageOps.grayscale(image)
+            case 'cutting':
+                self.spin = {
+                    'Left': QSpinBox(),
+                    'Up': QSpinBox(),
+                    "Down": QSpinBox(),
+                    "Right": QSpinBox()
+                }
+                for i, spin in enumerate(self.spin.keys()):
+                    self.spin[spin].setMinimum(0)
+                    self.spin[spin].setMaximum(10000)
+                    self.layout_grid.addWidget(self.spin[spin], 5, i)
+                self.spin["Right"].setValue(image.size[1])
+                self.spin["Down"].setValue(image.size[0])
+                self.btn_cutt = QPushButton("Cutting")
+                self.layout_grid.addWidget(self.btn_cutt, 4, 3)
+                self.btn_cutt.clicked.connect(self.cutter)
+                return image
+
+        return image
+
+    def cutter(self):
+        img_size = tuple(val.value() for val in self.spin.values())
+        img_path = 'temp/' + os.path.basename(self.img_path)
+        image = Image.open(img_path)
+        image = image.crop(box=img_size)
+        image.save(img_path)
+        pixmap = QPixmap(img_path)
+        pixmap = pixmap.scaledToHeight(self.img_hight)
+        self.widget.setPixmap(pixmap)
 
 
 app = QApplication(sys.argv)

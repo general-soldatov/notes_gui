@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
                                                 os.path.expanduser("~"),
                                                 "Images (*.png *.jpg)")[0]
         if self.img_path:
-            self.filter_to_image()
+            self.reset_image()
             self.layout_grid.addWidget(QLabel("Filter: "), 4, 0)
             self.img_filters.addItems(self.filters)
             self.img_filters.currentTextChanged.connect(self.filter_to_image)
@@ -57,39 +57,51 @@ class MainWindow(QMainWindow):
         else:
             self.widget.setText("Not Image")
 
-    def filter_to_image(self, filter=None):
-        image = Image.open(self.img_path)
-        img_path = 'temp/' + os.path.basename(self.img_path)
+    def render(self, image_path, filter):
+        image = Image.open(image_path)
         image = self.image_filter(image, filter)
-        image.save(img_path)
+        image.save(self.tmp_path)
+        self.pixmap(self.tmp_path)
+        return image
+
+    def reset_image(self):
+        self.tmp_path = 'temp/' + os.path.basename(self.img_path)
+        image = self.render(self.img_path, None)
+        self.img_filters.setCurrentIndex(0)
+        self.construct_cutter(image)
+
+    def filter_to_image(self, filter=None):
+        self.render(self.tmp_path, filter)
+
+    def pixmap(self, img_path):
         pixmap = QPixmap(img_path)
         pixmap = pixmap.scaledToHeight(self.img_hight)
         self.widget.setPixmap(pixmap)
 
-    def reset_image(self):
-        self.filter_to_image()
-        self.img_filters.setCurrentIndex(0)
+    def construct_cutter(self, image: Image.Image):
+        self.spin = {
+                    'Left': QSpinBox(),
+                    'Up': QSpinBox(),
+                    "Down": QSpinBox(),
+                    "Right": QSpinBox()
+        }
+        for i, spin in enumerate(self.spin.keys()):
+            self.spin[spin].setMinimum(0)
+            self.spin[spin].setMaximum(10000)
+            self.layout_grid.addWidget(self.spin[spin], 5, i)
+
+        self.spin["Right"].setValue(image.size[1])
+        self.spin["Down"].setValue(image.size[0])
+        self.btn_cutt = QPushButton("Cutting")
+        self.layout_grid.addWidget(self.btn_cutt, 4, 3)
+        self.btn_cutt.clicked.connect(self.cutter)
 
     def image_filter(self, image: Image.Image, filter):
         match filter:
             case 'grayscale':
                 return ImageOps.grayscale(image)
             case 'cutting':
-                self.spin = {
-                    'Left': QSpinBox(),
-                    'Up': QSpinBox(),
-                    "Down": QSpinBox(),
-                    "Right": QSpinBox()
-                }
-                for i, spin in enumerate(self.spin.keys()):
-                    self.spin[spin].setMinimum(0)
-                    self.spin[spin].setMaximum(10000)
-                    self.layout_grid.addWidget(self.spin[spin], 5, i)
-                self.spin["Right"].setValue(image.size[1])
-                self.spin["Down"].setValue(image.size[0])
-                self.btn_cutt = QPushButton("Cutting")
-                self.layout_grid.addWidget(self.btn_cutt, 4, 3)
-                self.btn_cutt.clicked.connect(self.cutter)
+                self.construct_cutter(image)
                 return image
 
         return image
@@ -100,9 +112,7 @@ class MainWindow(QMainWindow):
         image = Image.open(img_path)
         image = image.crop(box=img_size)
         image.save(img_path)
-        pixmap = QPixmap(img_path)
-        pixmap = pixmap.scaledToHeight(self.img_hight)
-        self.widget.setPixmap(pixmap)
+        self.pixmap(img_path)
 
 
 app = QApplication(sys.argv)

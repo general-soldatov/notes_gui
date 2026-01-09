@@ -1,87 +1,48 @@
 import sys
+import os
 from PyQt6.QtCore import QSize, Qt
-# from PyQt6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QVBoxLayout
-from PyQt6.QtWidgets import (
-    QApplication,
-    QCheckBox,
-    QComboBox,
-    QDateEdit,
-    QDateTimeEdit,
-    QDial,
-    QDoubleSpinBox,
-    QFontComboBox,
-    QLabel,
-    QLCDNumber,
-    QLineEdit,
-    QMainWindow,
-    QProgressBar,
-    QPushButton,
-    QRadioButton,
-    QSlider,
-    QSpinBox,
-    QTimeEdit,
-    QVBoxLayout,
-    QWidget,
-)
+from PyQt6.QtWidgets import QWidget, QApplication, QMainWindow, QPushButton, QLabel, QLineEdit, QGridLayout, QFileDialog, QMessageBox
+from PyQt6.QtGui import QPixmap
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
-        self.setWindowTitle("MyApp")
-        self.button_is_checked = True
+        self.setWindowTitle("Notes Editor")
+        # self.setFixedSize(QSize(800, 500))
+        layout = QGridLayout()
 
-        self.label = QLabel()
-
+        self.label = QLabel("Text of Notes:")
         self.input = QLineEdit()
-        self.input.textChanged.connect(self.label.setText)
-
-        layout = QVBoxLayout()
-        self.button = QPushButton("Press Me!")
-        self.button.setCheckable(True)
-        self.button.clicked.connect(self.button_clicked)
-        # self.button.clicked.connect(self.button_togled)
-        self.button.setChecked(self.button_is_checked)
-        # self.setFixedSize(QSize(400, 300))
-        # button.setFixedSize(QSize(100, 50))
-        layout.addWidget(self.input)
-        layout.addWidget(self.label)
-        layout.addWidget(self.button)
-        widgets = [
-            QCheckBox,
-            QComboBox,
-            QDateEdit,
-            QDateTimeEdit,
-            QDial,
-            QDoubleSpinBox,
-            QFontComboBox,
-            QLCDNumber,
-            QLabel,
-            QLineEdit,
-            QProgressBar,
-            QPushButton,
-            QRadioButton,
-            QSlider,
-            QSpinBox,
-            QTimeEdit,
-        ]
-
-        for w in widgets:
-            layout.addWidget(w())
+        self.btn_image = QPushButton("Import Image")
+        self.btn_save = QPushButton("Save Notes")
+        self.widget = QLabel("Image")
+        self.btn_image.clicked.connect(self.add_image)
+        self.btn_save.clicked.connect(self.save_notes)
+        layout.addWidget(self.label, 0, 0)
+        layout.addWidget(self.input, 0, 1, 1, 2)
+        layout.addWidget(self.btn_image, 1, 0)
+        layout.addWidget(self.btn_save, 1, 1)
+        layout.addWidget(self.widget, 2, 0, 2, 3)
 
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
 
-    def button_clicked(self):
-        self.button.setText("ClickedOfMe")
-        self.button.setEnabled(False)
+    def save_notes(self):
+        QMessageBox.information(self, "Information", "Your file has been saved.")
 
-        self.setWindowTitle("My Oneshot App")
-
-    def button_togled(self, checked):
-        self.button_is_checked = checked
-        print("Checked?", self.button_is_checked)
+    def add_image(self):
+        self.img_path = QFileDialog.getOpenFileName(self, "Select a File",
+                                                os.path.expanduser("~"),
+                                                "Images (*.png *.jpg)")[0]
+        if self.img_path:
+            pixmap = QPixmap(self.img_path)
+            pixmap = pixmap.scaledToWidth(400)
+            self.widget.setPixmap(pixmap)
+            QMessageBox.information(self, "Image", "Your image has been loaded.")
+        else:
+            self.widget.setText("Not Image")
 
 
 

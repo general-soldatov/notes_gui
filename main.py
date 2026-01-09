@@ -18,6 +18,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         self.img_hight = 300
         self.filters = ['null', 'grayscale', 'cutting']
+        self.tmp_path = None
 
         self.setWindowTitle("Notes Editor")
         self.setFixedSize(QSize(400, 500))
@@ -42,9 +43,11 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(container)
 
     def save_notes(self):
-        img = Image.open(self.tmp_path)
-        path = 'note_images/' + os.path.basename(self.img_path)
-        img.save(path)
+        path = 'null'
+        if self.tmp_path:
+            img = Image.open(self.tmp_path)
+            path = 'note_images/' + os.path.basename(self.img_path)
+            img.save(path)
         model = Model(
             text=self.input.text(),
             image=path
